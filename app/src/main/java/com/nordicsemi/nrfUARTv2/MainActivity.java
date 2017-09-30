@@ -28,6 +28,7 @@ package com.nordicsemi.nrfUARTv2;
 
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 
@@ -75,6 +76,7 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
     private static final int UART_PROFILE_CONNECTED = 20;
     private static final int UART_PROFILE_DISCONNECTED = 21;
     private static final int STATE_OFF = 10;
+    public  static final String CLEAN_LAST_GATT_DATA = "com.nordicsemi.nrfUART.CLEAN_LAST_GATT_DATA";
 
     TextView mRemoteRssiVal;
     RadioGroup mRg;
@@ -86,6 +88,7 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
     private ArrayAdapter<String> listAdapter;
     private Button btnConnectDisconnect,btnSend;
     private EditText edtMessage;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -145,6 +148,10 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
 					//send data to service
 					value = message.getBytes("UTF-8");
 					mService.writeRXCharacteristic(value);
+
+                    Intent intent = new Intent(CLEAN_LAST_GATT_DATA);
+                    LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(intent);
+
 					//Update the log with time stamp
 					String currentDateTimeString = DateFormat.getTimeInstance().format(new Date());
 					listAdapter.add("["+currentDateTimeString+"] TX: "+ message);
@@ -159,9 +166,9 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
         });
      
         // Set initial UI state
-        
+
     }
-    
+
     //UART service connected/disconnected
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder rawBinder) {
@@ -186,6 +193,16 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
         //Handler events that received from UART service 
         public void handleMessage(Message msg) {
   
+        }
+    };
+
+    private final BroadcastReceiver CleanLastGattReceiver = new BroadcastReceiver() {
+
+        public void onReceive(Context context, Intent intent) {
+
+            byte[] clear = new byte[20];
+            Arrays.fill(clear, (byte)' ');
+            mService.writeRXCharacteristic(clear);
         }
     };
 
@@ -269,6 +286,12 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
         bindService(bindIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
   
         LocalBroadcastManager.getInstance(this).registerReceiver(UARTStatusChangeReceiver, makeGattUpdateIntentFilter());
+        LocalBroadcastManager.getInstance(this).registerReceiver(CleanLastGattReceiver, cleanGattIntentFilter());
+    }
+    private static IntentFilter cleanGattIntentFilter() {
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(CLEAN_LAST_GATT_DATA);
+        return intentFilter;
     }
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
@@ -291,6 +314,7 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
         
         try {
         	LocalBroadcastManager.getInstance(this).unregisterReceiver(UARTStatusChangeReceiver);
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(CleanLastGattReceiver);
         } catch (Exception ignore) {
             Log.e(TAG, ignore.toString());
         } 

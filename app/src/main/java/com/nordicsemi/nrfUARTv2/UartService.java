@@ -39,6 +39,7 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import java.lang.reflect.Array;
 import java.util.List;
 import java.util.UUID;
 
@@ -328,8 +329,6 @@ public class UartService extends Service {
     
     public void writeRXCharacteristic(byte[] value)
     {
-    
-    	
     	BluetoothGattService RxService = mBluetoothGatt.getService(RX_SERVICE_UUID);
     	showMessage("mBluetoothGatt null"+ mBluetoothGatt);
     	if (RxService == null) {
@@ -345,8 +344,10 @@ public class UartService extends Service {
         }
         RxChar.setValue(value);
     	boolean status = mBluetoothGatt.writeCharacteristic(RxChar);
-    	
-        Log.d(TAG, "write TXchar - status=" + status);  
+
+        String valS = new String(value);
+        Log.d(TAG, "writeRXCharacteristic: " + valS);
+        Log.d(TAG, "write TXchar - status=" + status);
     }
     
     private void showMessage(String msg) {
