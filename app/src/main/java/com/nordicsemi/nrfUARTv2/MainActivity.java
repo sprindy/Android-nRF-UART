@@ -201,7 +201,7 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
         public void onReceive(Context context, Intent intent) {
 
             byte[] clear = new byte[20];
-            Arrays.fill(clear, (byte)' ');
+//            Arrays.fill(clear, (byte)' ');
             mService.writeRXCharacteristic(clear);
         }
     };
